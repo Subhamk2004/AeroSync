@@ -3,27 +3,51 @@ import { Clock } from 'lucide-react';
 
 export default function FlightSchedulerView({ flights, setFlights, optimized }) {
   const [newFlight, setNewFlight] = useState({
-    id: '',
     origin: '',
     destination: '',
     departureTime: '',
     arrivalTime: '',
     aircraft: '',
-    crew: ''
+    crew: '',
+    maxPayload: 5000, // Add default payload capacity
+    assignedCargo: [], // Initialize empty cargo array
+    currentPayload: 0 // Initialize current payload
   });
 
   const handleAddFlight = () => {
-    if (!newFlight.id || !newFlight.origin || !newFlight.destination) return;
+    // Validate required fields
+    if (!newFlight.origin || !newFlight.destination || !newFlight.aircraft) {
+      alert('Please fill in all required fields');
+      return;
+    }
+
+    // Generate flight ID
+    const flightId = `FL${String(flights.length + 1).padStart(3, '0')}`;
     
-    setFlights([...flights, { ...newFlight, id: `FL${String(flights.length + 1).padStart(3, '0')}` }]);
+    // Create new flight object with generated ID
+    const flightToAdd = {
+      ...newFlight,
+      id: flightId,
+      // Ensure we have default values for optimization
+      maxPayload: newFlight.maxPayload || 5000,
+      assignedCargo: [],
+      currentPayload: 0
+    };
+
+    // Add to flights array
+    setFlights([...flights, flightToAdd]);
+    
+    // Reset form
     setNewFlight({
-      id: '',
       origin: '',
       destination: '',
       departureTime: '',
       arrivalTime: '',
       aircraft: '',
-      crew: ''
+      crew: '',
+      maxPayload: 5000,
+      assignedCargo: [],
+      currentPayload: 0
     });
   };
 
@@ -43,31 +67,34 @@ export default function FlightSchedulerView({ flights, setFlights, optimized }) 
         <h3 className="font-medium mb-3">Add New Flight</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Origin</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Origin*</label>
             <input
               type="text"
               className="w-full p-2 border border-gray-300 rounded-md"
               placeholder="JFK"
               value={newFlight.origin}
               onChange={(e) => setNewFlight({...newFlight, origin: e.target.value})}
+              required
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Destination</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Destination*</label>
             <input
               type="text"
               className="w-full p-2 border border-gray-300 rounded-md"
               placeholder="LAX"
               value={newFlight.destination}
               onChange={(e) => setNewFlight({...newFlight, destination: e.target.value})}
+              required
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Aircraft</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Aircraft*</label>
             <select
               className="w-full p-2 border border-gray-300 rounded-md"
               value={newFlight.aircraft}
               onChange={(e) => setNewFlight({...newFlight, aircraft: e.target.value})}
+              required
             >
               <option value="">Select Aircraft</option>
               <option value="B737">Boeing 737</option>
@@ -137,14 +164,20 @@ export default function FlightSchedulerView({ flights, setFlights, optimized }) 
                 <tr key={flight.id}>
                   <td className="py-3 px-4 whitespace-nowrap">{flight.id}</td>
                   <td className="py-3 px-4 whitespace-nowrap">{flight.origin} → {flight.destination}</td>
-                  <td className="py-3 px-4 whitespace-nowrap">{flight.departureTime} - {flight.arrivalTime}</td>
+                  <td className="py-3 px-4 whitespace-nowrap">
+                    {flight.departureTime || '--:--'} - {flight.arrivalTime || '--:--'}
+                  </td>
                   <td className="py-3 px-4 whitespace-nowrap">{flight.aircraft}</td>
-                  <td className="py-3 px-4 whitespace-nowrap">{flight.crew}</td>
+                  <td className="py-3 px-4 whitespace-nowrap">{flight.crew || '--'}</td>
                   {optimized && (
                     <td className="py-3 px-4 whitespace-nowrap">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        {flight.score}%
-                      </span>
+                      {flight.score ? (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          {flight.score}%
+                        </span>
+                      ) : (
+                        '--'
+                      )}
                     </td>
                   )}
                 </tr>

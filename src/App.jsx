@@ -7,6 +7,7 @@ import CargoManagementView from './components/CargoOptimizer'
 import ConstraintsView from './components/ConflictResolver'
 import SettingsView from './components/SettingsView'
 import MetricCard from './components/MetricCard';
+import { SchedulerService } from './services/SchedulerService';
 
 // Main application component
 export default function App() {
@@ -21,16 +22,90 @@ export default function App() {
   useEffect(() => {
     // Sample flights data
     setFlights([
-      { id: 'FL001', origin: 'JFK', destination: 'LAX', departureTime: '08:00', arrivalTime: '11:30', aircraft: 'B737', crew: 'C1' },
-      { id: 'FL002', origin: 'LAX', destination: 'ORD', departureTime: '13:00', arrivalTime: '18:30', aircraft: 'A320', crew: 'C2' },
-      { id: 'FL003', origin: 'ORD', destination: 'JFK', departureTime: '20:00', arrivalTime: '23:30', aircraft: 'B777', crew: 'C3' },
+      {
+        id: 'FL001',
+        origin: 'JFK',
+        destination: 'LAX',
+        departureTime: '08:00',
+        arrivalTime: '11:30',
+        aircraft: 'B737',
+        crew: 'C1',
+        maxPayload: 5000, // Add this
+        assignedCargo: [], // Add this
+        currentPayload: 0 // Add this
+      },
+      {
+        id: 'FL002',
+        origin: 'LAX',
+        destination: 'ORD',
+        departureTime: '12:00',
+        arrivalTime: '18:00',
+        aircraft: 'A320',
+        crew: 'C2',
+        maxPayload: 6000, // Add this
+        assignedCargo: [], // Add this
+        currentPayload: 0 // Add this
+      },
+      {
+        id: 'FL003',
+        origin: 'ORD',
+        destination: 'MIA',
+        departureTime: '19:00',
+        arrivalTime: '22:30',
+        aircraft: 'B777',
+        crew: 'C3',
+        maxPayload: 7000, // Add this
+        assignedCargo: [], // Add this
+        currentPayload: 0 // Add this
+      },
+      {
+        id: 'FL004',
+        origin: 'MIA',
+        destination: 'JFK',
+        departureTime: '23:00',
+        arrivalTime: '02:30',
+        aircraft: 'A330',
+        crew: 'C4',
+        maxPayload: 8000, // Add this
+        assignedCargo: [], // Add this
+        currentPayload: 0 // Add this
+      },
     ]);
 
     // Sample cargo data
     setCargo([
-      { id: 'CG001', weight: 2500, priority: 'High', assignedFlight: 'FL001', type: 'Perishable' },
-      { id: 'CG002', weight: 3800, priority: 'Medium', assignedFlight: 'FL002', type: 'Standard' },
-      { id: 'CG003', weight: 1200, priority: 'Low', assignedFlight: 'FL003', type: 'Hazardous' },
+      {
+        id: 'CG001',
+        weight: 2500,
+        priority: 'High',
+        assignedFlight: 'FL001',
+        type: 'Perishable',
+        efficiency: 0 // Add this
+      },
+      {
+        id: 'CG002',
+        weight: 3000,
+        priority: 'Medium',
+        assignedFlight: 'FL002',
+        type: 'Electronics',
+        efficiency: 0 // Add this
+      },
+      {
+        id: 'CG003',
+        weight: 4000,
+        priority: 'Low',
+        assignedFlight: 'FL003',
+        type: 'Furniture',
+        efficiency: 0 // Add this
+      },
+      {
+        id: 'CG004',
+        weight: 5000,
+        priority: 'High',
+        assignedFlight: 'FL004',
+        type: 'Clothing',
+        efficiency: 0 // Add this
+      },
     ]);
 
     // Sample constraints
@@ -44,26 +119,37 @@ export default function App() {
   // Run optimization algorithm (simulated)
   const optimizeSchedule = () => {
     setLoading(true);
-    
-    // Simulate API call or complex calculation
-    setTimeout(() => {
-      // Update flights with optimized schedule
-      setFlights(prev => prev.map(flight => ({
-        ...flight,
-        optimized: true,
-        score: (Math.random() * 100).toFixed(1)
-      })));
-      
-      // Update cargo with optimized assignments
-      setCargo(prev => prev.map(item => ({
-        ...item,
-        optimized: true,
-        efficiency: (Math.random() * 100).toFixed(1)
-      })));
-      
-      setOptimized(true);
+
+    // Prepare settings object
+    const settings = {
+      optimizationPreference: 'balanced',
+      maxBacktrackingIterations: 1000,
+      heuristicWeight: 0.75,
+      constraintStrictness: 'medium'
+    };
+
+    try {
+      // Call optimization algorithm
+      const result = SchedulerService.optimizeSchedule(flights, cargo, constraints, settings);
+
+      if (result.success) {
+        // Update flights with optimized schedule
+        setFlights(result.flights);
+
+        // Update cargo with optimized assignments
+        setCargo(result.cargo);
+
+        setOptimized(true);
+      } else {
+        // Handle optimization failure
+        alert(`Optimization failed: ${result.message}`);
+      }
+    } catch (error) {
+      console.error("Optimization error:", error);
+      alert("An error occurred during optimization");
+    } finally {
       setLoading(false);
-    }, 2000);
+    }
   };
 
   // Reset optimization
@@ -106,7 +192,7 @@ export default function App() {
           <nav>
             <ul className="space-y-2">
               <li>
-                <button 
+                <button
                   onClick={() => setActiveTab('dashboard')}
                   className={`w-full flex items-center gap-3 p-3 rounded-md ${activeTab === 'dashboard' ? 'bg-indigo-50 text-indigo-600' : 'hover:bg-gray-100'}`}
                 >
@@ -115,7 +201,7 @@ export default function App() {
                 </button>
               </li>
               <li>
-                <button 
+                <button
                   onClick={() => setActiveTab('flights')}
                   className={`w-full flex items-center gap-3 p-3 rounded-md ${activeTab === 'flights' ? 'bg-indigo-50 text-indigo-600' : 'hover:bg-gray-100'}`}
                 >
@@ -124,7 +210,7 @@ export default function App() {
                 </button>
               </li>
               <li>
-                <button 
+                <button
                   onClick={() => setActiveTab('cargo')}
                   className={`w-full flex items-center gap-3 p-3 rounded-md ${activeTab === 'cargo' ? 'bg-indigo-50 text-indigo-600' : 'hover:bg-gray-100'}`}
                 >
@@ -133,7 +219,7 @@ export default function App() {
                 </button>
               </li>
               <li>
-                <button 
+                <button
                   onClick={() => setActiveTab('constraints')}
                   className={`w-full flex items-center gap-3 p-3 rounded-md ${activeTab === 'constraints' ? 'bg-indigo-50 text-indigo-600' : 'hover:bg-gray-100'}`}
                 >
@@ -142,7 +228,7 @@ export default function App() {
                 </button>
               </li>
               <li>
-                <button 
+                <button
                   onClick={() => setActiveTab('settings')}
                   className={`w-full flex items-center gap-3 p-3 rounded-md ${activeTab === 'settings' ? 'bg-indigo-50 text-indigo-600' : 'hover:bg-gray-100'}`}
                 >
@@ -157,9 +243,9 @@ export default function App() {
         {/* Main Content Area */}
         <main className="flex-1 bg-white rounded-lg shadow-sm p-6">
           {activeTab === 'dashboard' && (
-            <DashboardView 
-              flights={flights} 
-              cargo={cargo} 
+            <DashboardView
+              flights={flights}
+              cargo={cargo}
               constraints={constraints}
               optimized={optimized}
               onOptimize={optimizeSchedule}
@@ -167,31 +253,31 @@ export default function App() {
               loading={loading}
             />
           )}
-          
+
           {activeTab === 'flights' && (
-            <FlightSchedulerView 
-              flights={flights} 
+            <FlightSchedulerView
+              flights={flights}
               setFlights={setFlights}
               optimized={optimized}
             />
           )}
-          
+
           {activeTab === 'cargo' && (
-            <CargoManagementView 
-              cargo={cargo} 
+            <CargoManagementView
+              cargo={cargo}
               setCargo={setCargo}
               flights={flights}
               optimized={optimized}
             />
           )}
-          
+
           {activeTab === 'constraints' && (
-            <ConstraintsView 
-              constraints={constraints} 
+            <ConstraintsView
+              constraints={constraints}
               setConstraints={setConstraints}
             />
           )}
-          
+
           {activeTab === 'settings' && (
             <SettingsView />
           )}

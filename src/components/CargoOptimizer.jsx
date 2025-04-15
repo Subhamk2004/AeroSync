@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Package } from 'lucide-react';
 
 export default function CargoManagementView({ cargo, setCargo, flights, optimized }) {
   const [newCargo, setNewCargo] = useState({

@@ -586,7 +586,10 @@ class AirlineScheduler {
 
     // Process each constraint type
     for (const constraint of this.constraints) {
-      switch (constraint.type) {
+      // Fixed typo here
+      switch (
+        constraint.type // And here
+      ) {
         case "Aircraft":
           cspConstraints.push(this.createAircraftConstraint(constraint));
           break;
@@ -947,20 +950,30 @@ class AirlineScheduler {
 
   // Utility: Check if time is within window
   isTimeInWindow(time, windowStart, windowEnd) {
-    const [hours, minutes] = time.split(":").map(Number);
-    const [startHours, startMinutes] = windowStart.split(":").map(Number);
-    const [endHours, endMinutes] = windowEnd.split(":").map(Number);
+    // Parse all time strings into minutes since midnight
+    const timeInMinutes = this.convertToMinutes(time);
+    const windowStartInMinutes = this.convertToMinutes(windowStart);
+    const windowEndInMinutes = this.convertToMinutes(windowEnd);
 
-    const timeMinutes = hours * 60 + minutes;
-    const startMinutes = startHours * 60 + startMinutes;
-    const endMinutes = endHours * 60 + endMinutes;
-
-    // Handle window crossing midnight
-    if (endMinutes < startMinutes) {
-      return timeMinutes >= startMinutes || timeMinutes <= endMinutes;
+    // Handle overnight time windows (where end time is earlier than start time)
+    if (windowEndInMinutes < windowStartInMinutes) {
+      return (
+        timeInMinutes >= windowStartInMinutes ||
+        timeInMinutes <= windowEndInMinutes
+      );
     }
 
-    return timeMinutes >= startMinutes && timeMinutes <= endMinutes;
+    // Normal case (time window within same day)
+    return (
+      timeInMinutes >= windowStartInMinutes &&
+      timeInMinutes <= windowEndInMinutes
+    );
+  }
+
+  // Add this method to the AirlineScheduler class
+  convertToMinutes(timeString) {
+    const [hours, minutes] = timeString.split(":").map(Number);
+    return hours * 60 + minutes;
   }
 
   // Utility: Add hours to time
